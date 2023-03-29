@@ -1,61 +1,64 @@
-import argparse
-import os
 from PIL import Image
+import os
+import argparse
 
 
-def crop_images_from_instagram_screenshot(*, input_path: str, output_path: str) -> None:
+def resize_and_pad_images(args):
     """
-    Crop Instagram screenshots to remove top and bottom margins.
+    Resizes all images in the input folder to the specified size with padding if necessary and saves them in the output folder.
 
     Args:
-        input_path (str): The path to the directory containing the Instagram screenshots.
-        output_path (str): The path to the directory where the cropped images will be saved.
+        args (argparse.Namespace): Namespace object containing command-line arguments.
+
+    Raises:
+        IOError: If an input file cannot be opened.
+        OSError: If the output folder does not exist or cannot be created.
 
     Returns:
-        None: The function saves the cropped images to the output_path directory.
+        None
     """
-
-    # loop through all files in the input directory
-    for filename in os.listdir(input_path):
+    # Loop through all the files in the input folder
+    for filename in os.listdir(args.input_path):
         try:
-            # open image file
-            im = Image.open(os.path.join(input_path, filename))
-            width, height = im.size
+            # Open the file using PIL
+            img = Image.open(os.path.join(args.input_path, filename))
 
-            # find center line
-            centerLine = height // 2
+            # Calculate the new size of the canvas
+            img_width, img_height = img.size
+            ratio = img_width / img_height
+            if img_width > img_height:
+                img_width = args.size[0]
+                img_height = int(args.size[0] / ratio)
+            else:
+                img_width = int(args.size[0] * ratio)
+                img_height = args.size[0]
 
-            # crop top margin
-            white = (255, 255, 255)
-            for y in range(centerLine, 0, -1):
-                if len([1 for x in range(width) if im.getpixel((x, y)) == white]) == width:
-                    box = (0, y, width, height)
-                    crop = im.crop(box)
-                    crop.save(os.path.join(output_path, filename))
-                    break
+            # Calculate the position of the image in the canvas
+            x = (args.size[0] - img_width) // 2
+            y = (args.size[1] - img_height) // 2
 
-            # crop bottom margin
-            image_file = os.path.join(output_path, filename)
-            im = Image.open(image_file)
-            width, height = im.size
-            for y in range(1, height, 1):
-                if len([1 for x in range(width) if im.getpixel((x, y)) == white]) == width:
-                    box = (0, 0, width, y)
-                    crop = im.crop(box)
-                    crop.save(os.path.join(output_path, filename))
-                    break
-        except Exception as e:
-            print(f"Error occurred while processing {filename}: {str(e)}")
+            # Create a new image with white background
+            new_img = Image.new("RGB", args.size, (255, 255, 255))
+
+            # Paste the image in the canvas with white padding
+            new_img.paste(img.resize(
+                (img_width, img_height), Image.ANTIALIAS), (x, y))
+
+            # Save the new image with the same filename in the output folder
+            new_img.save(os.path.join(args.output_path, filename))
+        except (IOError, OSError):
+            continue
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Crop Instagram screenshots to remove top and bottom margins.")
-    parser.add_argument("--input-path", type=str, required=True,
-                        help="The path to the directory containing the Instagram screenshots.")
-    parser.add_argument("--output-path", type=str, required=True,
-                        help="The path to the directory where the cropped images will be saved.")
+        description='Resize and pad images in a folder.')
+    parser.add_argument('--input_path', type=str, required=True,
+                        help='Path to the folder containing input images.')
+    parser.add_argument('--output_path', type=str, required=True,
+                        help='Path to the folder where output images will be saved.')
+    parser.add_argument('--size', type=tuple, default=(512, 512),
+                        help='A tuple containing the desired width and height of the output images. Default is (512, 512).')
     args = parser.parse_args()
 
-    crop_images_from_instagram_screenshot(
-        input_path=args.input_path, output_path=args.output_path)
+    resize_and_pad_images(args)
