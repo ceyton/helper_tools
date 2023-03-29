@@ -17,16 +17,14 @@ def process_image_folder(data_dir, private=False, hub_username=None, hub_token=N
     dataset = load_dataset("imagefolder", data_dir=data_dir)
 
     # Push the dataset to the private repository on the Hugging Face Hub (if private=True)
-    if private:
-        assert hub_username is not None, "Please provide your Hugging Face username"
-        assert hub_token is not None, "Please provide your Hugging Face authentication token"
-        assert hub_dataset_name is not None, "Please provide a name for your private dataset"
-        dataset.push_to_hub(f"{hub_username}/{hub_dataset_name}",
-                            use_auth_token=hub_token, organization="user")
-        print(
-            f"Dataset uploaded to Hugging Face Hub as a private dataset: {hub_username}/{hub_dataset_name}")
-    else:
-        print("Dataset processed but not uploaded to Hugging Face Hub")
+
+    assert hub_username is not None, "Please provide your Hugging Face username"
+    assert hub_token is not None, "Please provide your Hugging Face authentication token"
+    assert hub_dataset_name is not None, "Please provide a name for your private dataset"
+    dataset.push_to_hub(
+        f"{hub_username}/{hub_dataset_name}", token=hub_token, private=private)
+    print(
+        f"Dataset uploaded to Hugging Face Hub as a private dataset: {hub_username}/{hub_dataset_name}")
 
     return dataset
 
