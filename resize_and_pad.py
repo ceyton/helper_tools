@@ -57,8 +57,9 @@ if __name__ == '__main__':
                         help='Path to the folder containing input images.')
     parser.add_argument('--output_path', type=str, required=True,
                         help='Path to the folder where output images will be saved.')
-    parser.add_argument('--size', type=tuple, default=(512, 512),
+    parser.add_argument('--size', type=int, nargs=2, default=(512, 512),
                         help='A tuple containing the desired width and height of the output images. Default is (512, 512).')
+
     args = parser.parse_args()
 
     resize_and_pad_images(args)
